@@ -1,0 +1,33 @@
+{
+  "name": "gulp-block-head",
+  "version": "0.0.0",
+  "description": "Simple, fast tool to filter SFC style files into seperate components",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hash-bang/gulp-block-head.git"
+  },
+  "keywords": [
+    "gulp",
+    "sfc",
+    "component",
+    "splitter"
+  ],
+  "author": "Matt Carter <m@ttcarter.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hash-bang/gulp-block-head/issues"
+  },
+  "homepage": "https://github.com/hash-bang/gulp-block-head#readme",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0"
+  },
+  "dependencies": {
+    "gulp": "^3.9.1",
+    "vinyl": "^2.2.0"
+  }
+}
