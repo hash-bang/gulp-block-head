@@ -13,14 +13,12 @@ module.exports = function(blocks) {
 
 	// Error check the blocks
 	blocks = blocks.map(block => ({
-		matchStart: new RegExp(`<${block.id}>`),
-		matchEnd: new RegExp(`</${block.id}>`),
-		transform: contents => `[[[${contents}]]]`,
+		matchStart: new RegExp(`^<${block.id}>$`),
+		matchEnd: new RegExp(`^</${block.id}>$`),
+		transform: contents => contents,
 		name: (path, block) => `${path}#${block.id}`,
 		...block,
 	}));
-
-	console.log('BLOCKS', blocks);
 
 
 	return through.obj(function(file, enc, done) {
@@ -53,7 +51,7 @@ module.exports = function(blocks) {
 		} else if (file.isNull()) {
 			done(null, file);
 		} else if (file.isStream()) {
-			done('Streams are not supported');
+			done('Gulp-block-head - Streams are not yet supported');
 		} else {
 			done('Unknown format');
 		}
