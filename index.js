@@ -41,9 +41,11 @@ module.exports = function(blocks) {
 						path: activeBlock.name(file.path, activeBlock),
 						contents: new Buffer.from(
 							activeBlock.transform(
-								lines.slice(blockStart, lineNumber).join('\n')
+								lines.slice(blockStart, lineNumber).join('\n'),
+								file.path
 							)
 						),
+						stat: file.stat,
 					};
 
 					debug(`extracted file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);

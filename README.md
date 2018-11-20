@@ -56,7 +56,7 @@ Each block definition accepts the following properties:
 |--------------|------------|----------------------------------------------------|--------------------------------------------------|
 | `id`         | `String`   | (derived from object key)                          | The ID of the block                              |
 | `name`       | `Function` | <code>(path, block) => `${path}#${block.id}</code> | How to name the output file                      |
-| `transform`  | `Function` | <code>contents => contents</code>                  | How to transform the contents of the output file |
+| `transform`  | `Function` | <code>(contents, path) => contents</code>          | How to transform the contents of the output file |
 | `matchStart` | `RegExp`   | `/^<${block.id}>$/`                                | The matching start of the block                  |
 | `matchEnd`   | `RegExp`   | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
 
