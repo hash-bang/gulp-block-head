@@ -1,4 +1,5 @@
 var _ = require('lodash');
+var debug = require('debug')('block-head');
 var through = require('through2');
 var Vinyl = require('vinyl');
 
@@ -36,14 +37,18 @@ module.exports = function(blocks) {
 						blockStart = lineNumber + 1;
 					}
 				} else if (activeBlock.matchEnd.test(line)) { // End of a block
-					stream.push(new Vinyl({
+					var vObject = {
 						path: activeBlock.name(file.path, activeBlock),
 						contents: new Buffer.from(
 							activeBlock.transform(
 								lines.slice(blockStart, lineNumber).join('\n')
 							)
 						),
-					}))
+					};
+
+					debug(`extracted file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
+
+					stream.push(new Vinyl(vObject))
 					activeBlock = false;
 				}
 			});

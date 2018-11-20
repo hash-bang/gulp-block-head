@@ -35,6 +35,15 @@ Since this module is designed to be fast and unopinionated some tradeoffs with p
 The idea here is that we don't waste time throwing source code though gigantic XML processors to detect opening and closing sections. We just parse the files and splice the bits we're interested in.
 
 
+Debugging
+---------
+This module uses the [debug](https://github.com/visionmedia/debug) module. Simply set `DEBUG=block-head` (or any other compatible inclusion expression) to show output.
+
+```
+DEBUG=block-head gulp build
+```
+
+
 API
 ===
 

@@ -24,6 +24,7 @@
   "homepage": "https://github.com/hash-bang/gulp-block-head#readme",
   "devDependencies": {
     "chai": "^4.2.0",
+    "debug": "^4.1.0",
     "mocha": "^5.2.0"
   },
   "dependencies": {
