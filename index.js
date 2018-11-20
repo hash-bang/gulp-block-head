@@ -6,7 +6,10 @@ var Vinyl = require('vinyl');
 module.exports = function(blocks) {
 	if (_.isObject(blocks)) { // Flatten lookup object into an array
 		blocks = Object.keys(blocks).map(id => {
-			var block = _.isFunction(blocks[id]) ? {transform: blocks[id]} : blocks[id];
+			var block =
+				_.isFunction(blocks[id]) ? {transform: blocks[id]} // Shorthand definition
+				: blocks[id];
+
 			block.id = id;
 			return block;
 		});
@@ -19,10 +22,11 @@ module.exports = function(blocks) {
 		transform: contents => contents,
 		name: (path, block) => `${path}#${block.id}`,
 		...block,
-	}));
+	}))
 
 
 	return through.obj(function(file, enc, done) {
+		var foundBlocks = 0;
 		var stream = this;
 
 		if (file.isBuffer()) {
@@ -51,10 +55,28 @@ module.exports = function(blocks) {
 					debug(`extracted file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
 
 					stream.push(new Vinyl(vObject))
+					foundBlocks++;
 					activeBlock = false;
 				}
 			});
-			done();
+
+			var defaultBlock = blocks.find(b => b.id == 'default');
+			if (foundBlocks == 0 && defaultBlock) { // No blocks extracted and we have a definition for a default
+				var vObject = {
+					path: defaultBlock.name(file.path, defaultBlock),
+					contents: new Buffer.from(
+						defaultBlock.transform(file.contents.toString(), file.path)
+					),
+					stat: file.stat,
+				};
+
+				debug(`extracted default file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
+
+				stream.push(new Vinyl(vObject))
+				done();
+			} else {
+				done();
+			}
 		} else if (file.isNull()) {
 			done(null, file);
 		} else if (file.isStream()) {

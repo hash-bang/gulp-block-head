@@ -60,3 +60,8 @@ Each block definition accepts the following properties:
 | `matchStart` | `RegExp`   | `/^<${block.id}>$/`                                | The matching start of the block                  |
 | `matchEnd`   | `RegExp`   | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
 
+
+**Notes:**
+
+* The `default` ID is used when no matches are found within the file
+* The `path` parameter within `name` and `transform` functions is the original path of the file, not the rewritten one

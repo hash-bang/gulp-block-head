@@ -32,4 +32,25 @@ describe('simple replacements', ()=> {
 			})
 	});
 
+	it('should be able to assume defaults', done => {
+		var output = {};
+		gulp.src(`${__dirname}/data/default.js`)
+			.pipe(blockHead({
+				default: {
+					name: (path, block) => path,
+					transform: x => x,
+				},
+			}))
+			.on('data', d => {
+				var base = fspath.basename(d.path);
+				output[base] = output[base] ? output[base] + d.contents.toString() : d.contents.toString();
+			})
+			.on('end', ()=> {
+				expect(output).to.deep.equal({
+					'default.js': 'alert(\'Hello World\');\n',
+				});
+				done();
+			})
+	});
+
 });
