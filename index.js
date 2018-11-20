@@ -62,6 +62,10 @@ module.exports = function(blocks) {
 
 			var defaultBlock = blocks.find(b => b.id == 'default');
 			if (foundBlocks == 0 && defaultBlock) { // No blocks extracted and we have a definition for a default
+				if (defaultBlock.include) { // Check if we should include this at all
+					if (!defaultBlock.include(file.path)) return done();
+				}
+
 				var vObject = {
 					path: defaultBlock.name(file.path, defaultBlock),
 					contents: new Buffer.from(

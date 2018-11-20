@@ -32,6 +32,10 @@ describe('simple replacements', ()=> {
 			})
 	});
 
+});
+
+describe('default rules', ()=> {
+
 	it('should be able to assume defaults', done => {
 		var output = {};
 		gulp.src(`${__dirname}/data/default.js`)
@@ -49,6 +53,42 @@ describe('simple replacements', ()=> {
 				expect(output).to.deep.equal({
 					'default.js': 'alert(\'Hello World\');\n',
 				});
+				done();
+			})
+	});
+
+	it('should be able accept inclusion', done => {
+		var output = {};
+		gulp.src(`${__dirname}/data/default.js`)
+			.pipe(blockHead({
+				default: {
+					include: path => true,
+				},
+			}))
+			.on('data', d => {
+				var base = fspath.basename(d.path);
+				output[base] = output[base] ? output[base] + d.contents.toString() : d.contents.toString();
+			})
+			.on('end', ()=> {
+				expect(output).to.not.deep.equal({});
+				done();
+			})
+	});
+
+	it('should be able refuse inclusion', done => {
+		var output = {};
+		gulp.src(`${__dirname}/data/default.js`)
+			.pipe(blockHead({
+				default: {
+					include: path => false,
+				},
+			}))
+			.on('data', d => {
+				var base = fspath.basename(d.path);
+				output[base] = output[base] ? output[base] + d.contents.toString() : d.contents.toString();
+			})
+			.on('end', ()=> {
+				expect(output).to.deep.equal({});
 				done();
 			})
 	});
