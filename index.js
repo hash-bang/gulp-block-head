@@ -72,9 +72,11 @@ module.exports = function(options) {
 				}
 
 				var vObject = {
-					path: settings.default.name(file.path, settings.default),
+					path: settings.default.name ? settings.default.name(file.path, settings.default) : file.path,
 					contents: new Buffer.from(
-						settings.default.transform(file.contents.toString(), file.path)
+						settings.default.transform
+							?  settings.default.transform(file.contents.toString(), file.path)
+							: file.contents
 					),
 					stat: file.stat,
 				};
