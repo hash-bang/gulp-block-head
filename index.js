@@ -3,12 +3,18 @@ var debug = require('debug')('block-head');
 var through = require('through2');
 var Vinyl = require('vinyl');
 
-module.exports = function(blocks) {
-	if (_.isObject(blocks)) { // Flatten lookup object into an array
-		blocks = Object.keys(blocks).map(id => {
+module.exports = function(options) {
+	var settings = {
+		default: false,
+		blocks: {},
+		...options,
+	};
+
+	if (_.isObject(settings.blocks)) { // Flatten lookup object into an array
+		settings.blocks = Object.keys(settings.blocks).map(id => {
 			var block =
-				_.isFunction(blocks[id]) ? {transform: blocks[id]} // Shorthand definition
-				: blocks[id];
+				_.isFunction(settings.blocks[id]) ? {transform: settings.blocks[id]} // Shorthand definition
+				: settings.blocks[id];
 
 			block.id = id;
 			return block;
@@ -16,7 +22,7 @@ module.exports = function(blocks) {
 	}
 
 	// Error check the blocks
-	blocks = blocks.map(block => ({
+	settings.blocks = settings.blocks.map(block => ({
 		matchStart: new RegExp(`^<${block.id}>$`),
 		matchEnd: new RegExp(`^</${block.id}>$`),
 		transform: contents => contents,
@@ -36,7 +42,7 @@ module.exports = function(blocks) {
 
 			lines.forEach((line, lineNumber) => {
 				if (!activeBlock) { // Not yet in a block
-					activeBlock = blocks.find(b => b.matchStart.test(line));
+					activeBlock = settings.blocks.find(b => b.matchStart.test(line));
 					if (activeBlock) { // Start of a new block
 						blockStart = lineNumber + 1;
 					}
@@ -60,16 +66,15 @@ module.exports = function(blocks) {
 				}
 			});
 
-			var defaultBlock = blocks.find(b => b.id == 'default');
-			if (foundBlocks == 0 && defaultBlock) { // No blocks extracted and we have a definition for a default
-				if (defaultBlock.include) { // Check if we should include this at all
-					if (!defaultBlock.include(file.path)) return done();
+			if (foundBlocks == 0 && settings.default) { // No blocks extracted and we have a definition for a default
+				if (settings.default.include) { // Check if we should include this at all
+					if (!settings.default.include(file.path)) return done();
 				}
 
 				var vObject = {
-					path: defaultBlock.name(file.path, defaultBlock),
+					path: settings.default.name(file.path, settings.default),
 					contents: new Buffer.from(
-						defaultBlock.transform(file.contents.toString(), file.path)
+						settings.default.transform(file.contents.toString(), file.path)
 					),
 					stat: file.stat,
 				};

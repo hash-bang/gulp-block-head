@@ -46,24 +46,26 @@ DEBUG=block-head gulp build
 
 API
 ===
+This plugin exports a single Gulp / Vinyl compatible stream transformer accepting a settings object.
 
-This plugin exports a single Gulp / Vinyl compatible stream transformer.
-The only argument is the block definitions which can be in the form of an object or an array.
 
 Each block definition accepts the following properties:
 
-| Key          | Type       | Default                                            | Description                                      |
-|--------------|------------|----------------------------------------------------|--------------------------------------------------|
-| `id`         | `String`   | (derived from object key)                          | The ID of the block                              |
-| `name`       | `Function` | <code>(path, block) => `${path}#${block.id}</code> | How to name the output file                      |
-| `transform`  | `Function` | <code>(contents, path) => contents</code>          | How to transform the contents of the output file |
-| `matchStart` | `RegExp`   | `/^<${block.id}>$/`                                | The matching start of the block                  |
-| `matchEnd`   | `RegExp`   | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
-| `include`    | `Function` | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
+| Key                    | Type                  | Default                                            | Description                                      |
+|------------------------|-----------------------|----------------------------------------------------|--------------------------------------------------|
+| `blocks`               | `Array` or `Object`   | `{}`                                               | Definition of the blocks                         |
+| `blocks.[].id`         | `String`              | (derived from object key)                          | The ID of the block                              |
+| `blocks.[].name`       | `Function`            | <code>(path, block) => `${path}#${block.id}</code> | How to name the output file                      |
+| `blocks.[].transform`  | `Function`            | <code>(contents, path) => contents</code>          | How to transform the contents of the output file |
+| `blocks.[].matchStart` | `RegExp`              | `/^<${block.id}>$/`                                | The matching start of the block                  |
+| `blocks.[].matchEnd`   | `RegExp`              | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
+| `default`              | `Boolean` or `Object` | `false`                                            | Whether to handle files when no blocks are found |
+| `default.include`      | `Function`            | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
 
 
 **Notes:**
 
+* The `blocks` definitions can be in the form of an object or an array
 * The `default` ID is used when no matches are found within the file
 * A decision whether the file output should be included at all can be set with the `include` function within the default block
 * The `path` parameter within `name` and `transform` functions is the original path of the file, not the rewritten one
