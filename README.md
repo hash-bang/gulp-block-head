@@ -60,6 +60,8 @@ Each block definition accepts the following properties:
 | `blocks.[].matchStart` | `RegExp`              | `/^<${block.id}>$/`                                | The matching start of the block                  |
 | `blocks.[].matchEnd`   | `RegExp`              | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
 | `default`              | `Boolean` or `Object` | `false`                                            | Whether to handle files when no blocks are found |
+| `default.name`         | `Function`            |                                                    | Optional renamer for default resources           |
+| `default.transform`    | `Function`            |                                                    | Optional transformer for default resources       |
 | `default.include`      | `Function`            | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
 
 
