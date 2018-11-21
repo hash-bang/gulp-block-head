@@ -1,5 +1,6 @@
 var _ = require('lodash');
 var debug = require('debug')('block-head');
+var parseAttributes = require('parse-attributes');
 var through = require('through2');
 var Vinyl = require('vinyl');
 
@@ -23,7 +24,7 @@ module.exports = function(options) {
 
 	// Error check the blocks
 	settings.blocks = settings.blocks.map(block => ({
-		matchStart: new RegExp(`^<${block.id}>$`),
+		matchStart: new RegExp(`^<${block.id}(\s*.+?\s*)?>$`),
 		matchEnd: new RegExp(`^</${block.id}>$`),
 		transform: contents => contents,
 		name: (path, block) => `${path}#${block.id}`,
@@ -43,7 +44,16 @@ module.exports = function(options) {
 
 			lines.forEach((line, lineNumber) => {
 				if (!block) { // Not yet in a block
-					block = settings.blocks.find(b => b.matchStart.test(line));
+					block = settings.blocks.find(b => {
+						var match = b.matchStart.exec(line);
+						if (match) {
+							block = b;
+							block.attr = parseAttributes(match[1]);
+							return true;
+						} else {
+							return false;
+						}
+					});
 					if (block) { // Start of a new block
 						blockStart = lineNumber + 1;
 					}
@@ -53,7 +63,8 @@ module.exports = function(options) {
 						contents: new Buffer.from(
 							block.transform(
 								lines.slice(blockStart, lineNumber).join('\n'),
-								file.path
+								file.path,
+								block
 							)
 						),
 						stat: file.stat,
