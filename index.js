@@ -32,25 +32,25 @@ module.exports = function(options) {
 
 
 	return through.obj(function(file, enc, done) {
-		var foundBlocks = 0;
 		var stream = this;
 
 		if (file.isBuffer()) {
 			var lines = file.contents.toString().split('\n');
-			var activeBlock = false; // Either boolean false or the block reference we are in
+			var block = false; // Either boolean false or the block reference we are in
 			var blockStart; // The line offset the block started at
+			var foundBlocks = [];
 
 			lines.forEach((line, lineNumber) => {
-				if (!activeBlock) { // Not yet in a block
-					activeBlock = settings.blocks.find(b => b.matchStart.test(line));
-					if (activeBlock) { // Start of a new block
+				if (!block) { // Not yet in a block
+					block = settings.blocks.find(b => b.matchStart.test(line));
+					if (block) { // Start of a new block
 						blockStart = lineNumber + 1;
 					}
-				} else if (activeBlock.matchEnd.test(line)) { // End of a block
+				} else if (block.matchEnd.test(line)) { // End of a block
 					var vObject = {
-						path: activeBlock.name(file.path, activeBlock),
+						path: block.name(file.path, block),
 						contents: new Buffer.from(
-							activeBlock.transform(
+							block.transform(
 								lines.slice(blockStart, lineNumber).join('\n'),
 								file.path
 							)
@@ -58,15 +58,23 @@ module.exports = function(options) {
 						stat: file.stat,
 					};
 
-					debug(`extracted file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
+					foundBlocks.push({
+						sort: block.sort ? block.sort(file.path, block) : 0,
+						vinyl: vObject,
+					});
 
-					stream.push(new Vinyl(vObject))
-					foundBlocks++;
-					activeBlock = false;
+					debug(`extracted file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
+					block = false;
 				}
 			});
 
-			if (foundBlocks == 0 && settings.default) { // No blocks extracted and we have a definition for a default
+			if (foundBlocks.length) { // Found some blocks
+				foundBlocks
+					.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
+					.forEach(block => this.push(block.vinyl))
+
+				done(); // Remove input content
+			} else if (typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
 				if (settings.default.include) { // Check if we should include this at all
 					if (!settings.default.include(file.path)) return done();
 				}
@@ -84,9 +92,11 @@ module.exports = function(options) {
 				debug(`extracted default file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
 
 				stream.push(new Vinyl(vObject))
-				done();
-			} else {
-				done();
+				done(); // Remove input content
+			} else if (settings.default === false) { // Remove the file from the stream
+				done(); // Remove input content
+			} else { // Let the file pass though
+				done(null, file);
 			}
 		} else if (file.isNull()) {
 			done(null, file);

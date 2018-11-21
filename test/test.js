@@ -9,13 +9,15 @@ describe('simple replacements', ()=> {
 		var output = {};
 		gulp.src(`${__dirname}/data/simple.html`)
 			.pipe(blockHead({
-				foo: x => `foo>${x}<foo`, // Key => Transform
-				bar: { // Extended definition
-					transform: x => `bar>>${x}<<bar`,
-				},
-				baz: { // Transform + rename
-					name: (path, block) => 'baz.txt',
-					transform: x => `baz>>>${x}<<<baz`,
+				blocks: {
+					foo: x => `foo>${x}<foo`, // Key => Transform
+					bar: { // Extended definition
+						transform: x => `bar>>${x}<<bar`,
+					},
+					baz: { // Transform + rename
+						name: (path, block) => 'baz.txt',
+						transform: x => `baz>>>${x}<<<baz`,
+					},
 				},
 			}))
 			.on('data', d => {
