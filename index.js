@@ -27,6 +27,7 @@ module.exports = function(options) {
 		matchEnd: new RegExp(`^</${block.id}>$`),
 		transform: contents => contents,
 		name: (path, block) => `${path}#${block.id}`,
+		sort: 0,
 		...block,
 	}))
 
@@ -47,7 +48,7 @@ module.exports = function(options) {
 						blockStart = lineNumber + 1;
 					}
 				} else if (block.matchEnd.test(line)) { // End of a block
-					var vObject = {
+					var vObject = new Vinyl({
 						path: block.name(file.path, block),
 						contents: new Buffer.from(
 							block.transform(
@@ -56,14 +57,16 @@ module.exports = function(options) {
 							)
 						),
 						stat: file.stat,
-					};
+					});
 
 					foundBlocks.push({
-						sort: block.sort ? block.sort(file.path, block) : 0,
+						sort:
+							! block.sort ? 0
+							: typeof block.sort == 'function' ? block.sort(file.path, block)
+							: block.sort,
 						vinyl: vObject,
 					});
 
-					debug(`extracted file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
 					block = false;
 				}
 			});
@@ -71,7 +74,10 @@ module.exports = function(options) {
 			if (foundBlocks.length) { // Found some blocks
 				foundBlocks
 					.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
-					.forEach(block => this.push(block.vinyl))
+					.forEach(block => {
+						debug(`extracted file "${block.vinyl.path}" (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
+						this.push(block.vinyl);
+					})
 
 				done(); // Remove input content
 			} else if (typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
