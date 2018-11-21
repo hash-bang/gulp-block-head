@@ -5,7 +5,6 @@ Simple, fast tool to filter [Single-File-Component](https://vuejs.org/v2/guide/s
 This component was written out of frustration at the number of SFC supporting tools out there, none of which were simple, fast and unopinionated.
 
 
-
 ```javascript
 var blockHead = require('gulp-block-head');
 var gulp = require('gulp');
@@ -42,6 +41,96 @@ This module uses the [debug](https://github.com/visionmedia/debug) module. Simpl
 ```
 DEBUG=block-head gulp build
 ```
+
+
+Examples
+--------
+Given a `.vue` file that looks like this:
+
+```
+<service singleton option="value">
+module.exports = { ... };
+</service>
+
+<component>
+module.exports = {
+	methods: {
+		doSomething() {
+			// ...
+		}
+	},
+};
+</component>
+
+<template>
+	<div class="card">
+		<div class="card-header">
+			<h2>Test unit</h2>
+		</div>
+		<div class="card-body">
+			Hello World
+		</div>
+	</div>
+</div>
+```
+
+You can split the above .vue file using a config such as:
+
+
+```javascript
+gulp.task('build.vue', ['load:app'], ()=>
+	gulp.src([
+		'**/*.vue',
+		'!dist/**/*', // Don't get stuck in a loop
+		'!node_modules/**/*',
+	])
+	.pipe(sourcemaps.init())
+	.pipe(blockHead({
+		blocks: {
+			component: { // Accept something that should be registered via Vue.component()
+				sort: 9, // Add after templates
+				name: path => `components/${fspath.basename(path, '.vue')}.js`,
+				transform: (content, path) =>
+					`Vue.component('${fspath.basename(path, '.vue')}', `
+					+ _.trimEnd(content, ';')
+						.replace('{', `{\n\ttemplate: Vue.template('${fspath.basename(path, '.vue')}'),`)
+					+ ')'
+			},
+			service: { // Accept some code to store as a shared service
+				sort: 1,
+				name: path => `services/${fspath.basename(path, '.vue')}.js`,
+				transform: (content, path, block) => // Pass all attrs as arguments to the Vue.service() handler
+					_.isEmpty(block.attr)
+					? `Vue.service('${fspath.basename(path, '.vue')}', ${_.trimEnd(content, ';')});`
+					: `Vue.service('${fspath.basename(path, '.vue')}', ${_.trimEnd(content, ';')}, ${JSON.stringify(block.attr)});`
+			},
+			script: { // Just dump the code inline
+				sort: 0,
+				name: path => `scripts/${fspath.basename(path, '.vue')}.js`,
+				transform: content => content,
+			},
+			template: { // Wrap the HTML in a call to `Vue.template(id, html)`
+				sort: 5,
+				name: path => `templates/${fspath.basename(path, '.vue')}.js`,
+				transform: (content, path) => `Vue.template('${fspath.basename(path, '.vue')}', \`${_.trimEnd(content, ';').replace(/\`/g, '\\`')}\`);`,
+			},
+		},
+	}))
+	.pipe(replace(/\s*module.exports =\s*/, '')) // Remove syntactic sugar
+	.pipe(babel({
+		presets: ['@babel/env'],
+	}))
+	.pipe(concat('app.js'))
+	.pipe(uglify())
+	.pipe(sourcemaps.write('.'))
+	.pipe(gulp.dest('./dist'))
+```
+
+**Notes:**
+
+* In the above we assume that `Vue.template(id, [html])` exists and provides a simple caching template store. You could alternatively dump your HTML into seperate files and deal with it that way
+* Likewise `Vue.service(id, [object], [settings])` provides a caching service for objects, with additional options. Options are provided within a tag as attributes
+
 
 
 API
