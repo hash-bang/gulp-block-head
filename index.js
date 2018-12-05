@@ -65,7 +65,7 @@ module.exports = function(options) {
 								lines.slice(blockStart, lineNumber).join('\n'),
 								file.path,
 								block
-							)
+							) || ''
 						),
 						stat: file.stat,
 					});
@@ -100,7 +100,7 @@ module.exports = function(options) {
 					path: settings.default.name ? settings.default.name(file.path, settings.default) : file.path,
 					contents: new Buffer.from(
 						settings.default.transform
-							?  settings.default.transform(file.contents.toString(), file.path)
+							? settings.default.transform(file.contents.toString(), file.path) || ''
 							: file.contents
 					),
 					stat: file.stat,
