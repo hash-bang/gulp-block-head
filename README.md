@@ -140,19 +140,20 @@ This plugin exports a single Gulp / Vinyl compatible stream transformer acceptin
 
 Each block definition accepts the following properties:
 
-| Key                    | Type                  | Default                                            | Description                                      |
-|------------------------|-----------------------|----------------------------------------------------|--------------------------------------------------|
-| `blocks`               | `Array` or `Object`   | `{}`                                               | Definition of the blocks                         |
-| `blocks.[].id`         | `String`              | (derived from object key)                          | The ID of the block                              |
-| `blocks.[].name`       | `Function`            | <code>(path, block) => `${path}#${block.id}</code> | How to name the output file                      |
-| `blocks.[].transform`  | `Function`            | <code>(contents, path, block) => contents</code>   | How to transform the contents of the output file |
-| `blocks.[].matchStart` | `RegExp`              | ``^<${block.id}(\s*.+?\s*)?>$``                    | The matching start of the block                  |
-| `blocks.[].matchEnd`   | `RegExp`              | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
-| `blocks.[].sort`       | `Function` or any     | `0`                                                | Where to output this block, if this is a function its called as `(path, block)` |
-| `default`              | `Boolean` or `Object` | `false`                                            | Whether to handle files when no blocks are found |
-| `default.name`         | `Function`            |                                                    | Optional renamer for default resources           |
-| `default.transform`    | `Function`            |                                                    | Optional transformer for default resources       |
-| `default.include`      | `Function`            | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
+| Key                    | Type                    | Default                                            | Description                                      |
+|------------------------|-------------------------|----------------------------------------------------|--------------------------------------------------|
+| `blocks`               | `Array` or `Object`     | `{}`                                               | Definition of the blocks                         |
+| `blocks.[].id`         | `String`                | (derived from object key)                          | The ID of the block                              |
+| `blocks.[].ignore`     | `function` or `boolean` | `false`                                            | Whether to ignore the block entirely, if this is a function its called as `(path, block)` |
+| `blocks.[].name`       | `Function`              | <code>(path, block) => `${path}#${block.id}</code> | How to name the output file                      |
+| `blocks.[].transform`  | `Function`              | <code>(contents, path, block) => contents</code>   | How to transform the contents of the output file |
+| `blocks.[].matchStart` | `RegExp`                | ``^<${block.id}(\s*.+?\s*)?>$``                    | The matching start of the block                  |
+| `blocks.[].matchEnd`   | `RegExp`                | `/^<\/${block.id}>$/`                              | The matching end of the block                    |
+| `blocks.[].sort`       | `Function` or any       | `0`                                                | Where to output this block, if this is a function its called as `(path, block)` |
+| `default`              | `Boolean` or `Object`   | `false`                                            | Whether to handle files when no blocks are found |
+| `default.name`         | `Function`              |                                                    | Optional renamer for default resources           |
+| `default.transform`    | `Function`              |                                                    | Optional transformer for default resources       |
+| `default.include`      | `Function`              | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
 
 
 **Notes:**

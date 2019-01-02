@@ -29,6 +29,7 @@ module.exports = function(options) {
 		transform: contents => contents,
 		name: (path, block) => `${path}#${block.id}`,
 		sort: 0,
+		ignore: false,
 		...block,
 	}))
 
@@ -41,6 +42,7 @@ module.exports = function(options) {
 			var block = false; // Either boolean false or the block reference we are in
 			var blockStart; // The line offset the block started at
 			var foundBlocks = [];
+			var ignoreCount = 0;
 
 			lines.forEach((line, lineNumber) => {
 				if (!block) { // Not yet in a block
@@ -58,31 +60,42 @@ module.exports = function(options) {
 						blockStart = lineNumber + 1;
 					}
 				} else if (block.matchEnd.test(line)) { // End of a block
-					var vObject = new Vinyl({
-						path: block.name(file.path, block),
-						contents: new Buffer.from(
-							block.transform(
-								lines.slice(blockStart, lineNumber).join('\n'),
-								file.path,
-								block
-							) || ''
-						),
-						stat: file.stat,
-					});
+					if (
+						block.ignore === true
+						|| (typeof block.ignore == 'function' && block.ignore(file.path, block))
+					) { // Ignore block
+						debug(`Ignore block "${block.id}"`, file.path, `due to ignore result`);
+						ignoreCount++;
+						// Do nothing
+					} else { // Include block
+						var vObject = new Vinyl({
+							path: block.name(file.path, block),
+							contents: new Buffer.from(
+								block.transform(
+									lines.slice(blockStart, lineNumber).join('\n'),
+									file.path,
+									block
+								) || ''
+							),
+							stat: file.stat,
+						});
 
-					foundBlocks.push({
-						sort:
-							! block.sort ? 0
-							: typeof block.sort == 'function' ? block.sort(file.path, block)
-							: block.sort,
-						vinyl: vObject,
-					});
+						foundBlocks.push({
+							sort:
+								! block.sort ? 0
+								: typeof block.sort == 'function' ? block.sort(file.path, block)
+								: block.sort,
+							vinyl: vObject,
+						});
+					}
 
 					block = false;
 				}
 			});
 
-			if (foundBlocks.length) { // Found some blocks
+			if (block) { // Still in a block even though we exited? Missing closing block syntax
+				done(`Missing closing block syntax in ${file.path} - block "${block.id}" not closed with ${block.matchEnd}`);
+			} else if (foundBlocks.length) { // Found some blocks
 				foundBlocks
 					.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
 					.forEach(block => {
@@ -91,7 +104,7 @@ module.exports = function(options) {
 					})
 
 				done(); // Remove input content
-			} else if (typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
+			} else if (!foundBlocks.length && !ignoreCount && typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
 				if (settings.default.include) { // Check if we should include this at all
 					if (!settings.default.include(file.path)) return done();
 				}
@@ -106,14 +119,15 @@ module.exports = function(options) {
 					stat: file.stat,
 				};
 
-				debug(`extracted default file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
+				debug(`Extracted default file "${vObject.path}" (${Math.ceil(vObject.contents.length / 1024)}kb)`);
 
 				stream.push(new Vinyl(vObject))
 				done(); // Remove input content
 			} else if (settings.default === false) { // Remove the file from the stream
 				done(); // Remove input content
-			} else { // Let the file pass though
-				done(null, file);
+			} else { // Give up and remove the file from the stream
+				debug('Skipping unknown file contents', file.path);
+				done();
 			}
 		} else if (file.isNull()) {
 			done(null, file);
