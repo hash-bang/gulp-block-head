@@ -1,7 +1,7 @@
-var expect = require('chai').expect;
 var blockHead = require('..');
-var gulp = require('gulp');
+var expect = require('chai').expect;
 var fspath = require('path');
+var gulp = require('gulp');
 
 describe('simple replacements', ()=> {
 

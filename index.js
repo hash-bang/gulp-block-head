@@ -40,7 +40,6 @@ module.exports = function(options) {
 		if (file.isBuffer()) {
 			var lines = file.contents.toString().split('\n');
 			var block = false; // Either boolean false or the block reference we are in
-			var blockStart; // The line offset the block started at
 			var foundBlocks = [];
 			var ignoreCount = 0;
 
@@ -57,7 +56,7 @@ module.exports = function(options) {
 						}
 					});
 					if (block) { // Start of a new block
-						blockStart = lineNumber + 1;
+						block.lineOffset = lineNumber + 1;
 					}
 				} else if (block.matchEnd.test(line)) { // End of a block
 					if (
@@ -72,7 +71,7 @@ module.exports = function(options) {
 							path: block.name(file.path, block),
 							contents: new Buffer.from(
 								block.transform(
-									lines.slice(blockStart, lineNumber).join('\n'),
+									lines.slice(block.lineOffset, lineNumber).join('\n'),
 									file.path,
 									block
 								) || ''
