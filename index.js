@@ -11,7 +11,7 @@ module.exports = function(options) {
 		...options,
 	};
 
-	if (_.isObject(settings.blocks)) { // Flatten lookup object into an array
+	if (!_.isArray(settings.blocks) && _.isObject(settings.blocks)) { // Flatten lookup object into an array
 		settings.blocks = Object.keys(settings.blocks).map(id => {
 			var block =
 				_.isFunction(settings.blocks[id]) ? {transform: settings.blocks[id]} // Shorthand definition
