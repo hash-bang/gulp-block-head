@@ -1,10 +1,13 @@
 var _ = require('lodash');
 var debug = require('debug')('block-head');
+var fspath = require('path');
+var gulp = require('gulp');
 var parseAttributes = require('parse-attributes');
 var through = require('through2');
 var Vinyl = require('vinyl');
+var vm = require('vm');
 
-module.exports = function(options) {
+var blockHead = function(options) {
 	var settings = {
 		default: false,
 		blocks: {},
@@ -32,7 +35,6 @@ module.exports = function(options) {
 		ignore: false,
 		...block,
 	}))
-
 
 	return through.obj(function(file, enc, done) {
 		var stream = this;
@@ -80,6 +82,7 @@ module.exports = function(options) {
 						});
 
 						foundBlocks.push({
+							lineOffset: block.lineOffset,
 							sort:
 								! block.sort ? 0
 								: typeof block.sort == 'function' ? block.sort(file.path, block)
@@ -98,7 +101,7 @@ module.exports = function(options) {
 				foundBlocks
 					.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
 					.forEach(block => {
-						debug(`extracted file "${block.vinyl.path}" (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
+						debug(`extracted file "${block.vinyl.path}" +${block.lineOffset+1} (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
 						this.push(block.vinyl);
 					})
 
@@ -137,3 +140,85 @@ module.exports = function(options) {
 		}
 	});
 };
+
+
+/**
+* Shorthand function for reading in a file and processing the designated blocks as being called using the standard `import(file)`
+* NOTE: Because of limitations with Vinyl streams this function returns a promise and does not block unlike the usual 'require'
+* This function is designed to be used in native Node rather than a Gulp chain
+* @param {string} files A single file path glob expression or any valid gulp.src() expression, to specify additional gulp.src options use options.src
+* @param {array|string|Object} [options="backend"] Either an array or single block name to accept and process or an options object, if the former the value is assigned to options.blocks
+* @param {array|string|Object} [options.blocks] The blocks to accept, can be a single block string, an array of acceptable blocks or a full blockHead definition (in which case no mutation happens)
+* @param {Object} [options.src] Additional parameters passed to `gulp.src(files, #)` when reading the file input
+* @param {boolean|Object} [options.sandbox=false] The sandbox to use when running the script in a VM. If false the code is run in this context which allows all globals to be available
+* @returns {Promise} A promise which will resolve when all files have been run
+*/
+var blockHeadImport = function(files, options) {
+	// Settings + Argument mangling {{{
+	var settings = {
+		blocks: ['backend'],
+		sandbox: false,
+		src: {},
+	};
+
+	if (_.isString(options)) {
+		settings.blocks = [options];
+	} else if (_.isArray(options)) {
+		settings.blocks = options;
+	} else if (_.isObject(options)) {
+		Object.assign(settings, options);
+		if (_.isString(settings.blocks)) settings.blocks = [settings.blocks];
+	} else {
+		throw "Unsupported options.block value";
+	}
+	// }}}
+
+	// Glue VM structure into each block {{{
+	settings.blocks = _.map(settings.blocks, (v, k) => {
+		return _.isObject(v) ? v : {
+			id: _.isString(k) ? k : v, // Use either the key if we're given an object, the string expression or the string expression
+			name: path => path,
+			transform: (content, path, block) => {
+				try {
+					if (settings.sandbox === false) {
+						vm.runInThisContext(
+							content,
+							{
+								filename: path,
+								lineOffset: block.lineOffset,
+							}
+						);
+					} else {
+						vm.runInNewContext(
+							content,
+							Object.assign({}, settings.sandbox, {
+								script: {
+									file: fspath.basename(path),
+									line: block.lineOffset + 1, // Offsets are zero based
+								},
+							}),
+							{
+								filename: path,
+								lineOffset: block.lineOffset,
+							}
+						);
+					}
+				} catch (e) {
+					throw e;
+				}
+			},
+		};
+	});
+	// }}}
+
+	return new Promise((resolve, reject) => {
+		gulp.src(files, settings.src)
+			.pipe(blockHead(_.pick(settings, ['default', 'blocks'])))
+			.on('data', ()=> {}) // BUGFIX: Have to set data as a noop or 'end' doesnt get called - https://github.com/gulpjs/gulp/issues/1637
+			.on('end', resolve)
+			.on('error', reject)
+	});
+};
+
+module.exports = blockHead;
+module.exports.import = blockHeadImport;

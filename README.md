@@ -163,3 +163,43 @@ Each block definition accepts the following properties:
 * A decision whether the file output should be included at all can be set with the `include` function within the default block
 * The `path` parameter within `name` and `transform` functions is the original path of the file, not the rewritten one
 * Tag attributes are available as `block.attr`. Single attributes default to true: `<block attr1 attr2="value2">` becomes `{attr1: true, attr2: 'value2'}`
+
+
+BlockHead.import(files, options)
+--------------------------------
+In addition to a Gulp adpater this module also provides the shorthand `import()` method which allows inline inclusion of JS files split into blocks.
+
+This function will attempt to read then given files (which can be a single path, array or any valid `gulp.src()` glob), extract the given blocks and run them with a context. This is designed to be as close as possible to the `import` syntax.
+
+
+```javascript
+var blockHead = require('gulp-block-head');
+
+
+// Read the given HTML file and run all scripts specified in the 'script' blocks - this will execute in the current context
+blockHead.import('./test/data/script.html', 'script')
+	.then(()=> ...)
+
+
+// Read the given HTML file and run all scripts specified in the 'script', 'include' and 'import' blocks - passing in a custom sandbox context
+blockHead.import('./test/data/script.html', {
+	blocks: ['script', 'include', 'import'],
+	sandbox: {foo: 'Foo!'},
+})
+	.then(()=> ...)
+```
+
+
+This function supports the following options:
+
+| Key       | Type                          | Default     | Description                                                                    |
+|-----------|-------------------------------|-------------|--------------------------------------------------------------------------------|
+| `blocks`  | `String`, `Array` or `Object` | `"backend"` | The blocks to process, see the notes below for more details                    |
+| `src`     | `Object`                      | `{}`        | Options to pass to `gulp.src()` when processing the file input                 |
+| `sandbox` | `Boolean` or `Object`         | `false`     | The sandbox to run the code in, if boolean `false` the current context is used |
+
+**Notes:**
+
+* If `blocks` is a single string or array of strings the transform function is constructed automatically, if its an object the transform is ignored and a full BlockHead spec must be specified instead
+* If `sandbox === false` the script will have access to all objects in the current scope, including any declared globals
+* Passing a single string or array to the `options` parameter will assume setting of the `blocks` property

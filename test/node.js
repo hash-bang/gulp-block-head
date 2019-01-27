@@ -23,7 +23,7 @@ describe('node execution', ()=> {
 								Object.assign({}, sandbox, {
 									script: {
 										file: fspath.basename(path),
-										line: block.lineOffset + 1, // Offsets are usually zero based
+										line: block.lineOffset + 1, // Offsets are zero based
 									},
 								}),
 								{
@@ -78,6 +78,37 @@ describe('node execution', ()=> {
 				expect(err.stack).to.match(/\s*at .*?\/scripts-error.html:6:7\n/);
 				done();
 			})
+	});
+
+});
+
+describe('blockHead.import()', ()=> {
+
+	it('should import into sandboxed context', ()=> {
+		var options = {
+			blocks: ['script'],
+			sandbox: {
+				output: [],
+				outputMeta: {},
+				script: 'dummy.js',
+			},
+		};
+
+		return blockHead.import(`${__dirname}/data/scripts.html`, options)
+			.then(()=> {
+				expect(options.sandbox.output).to.deep.equal(['S1', 'S2', 'S3']);
+			});
+	});
+
+	it('should import into current context', ()=> {
+		global.output = [];
+		global.outputMeta = {};
+		global.script = 'dummy.js';
+
+		return blockHead.import(`${__dirname}/data/scripts.html`, 'script')
+			.then(()=> {
+				expect(global.output).to.deep.equal(['S1', 'S2', 'S3']);
+			});
 	});
 
 });
