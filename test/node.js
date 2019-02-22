@@ -111,4 +111,24 @@ describe('blockHead.import()', ()=> {
 			});
 	});
 
+	it('should support transform replacement', ()=> {
+		var found = [];
+		return blockHead.import(`${__dirname}/data/scripts.html`, {
+			blocks: {
+				script: {
+					transform: (content, path, block) => {
+						found.push({path, ...block.attr});
+					},
+				},
+			},
+		})
+		.then(()=> {
+			expect(found).to.deep.equal([
+				{path: `${__dirname}/data/scripts.html`, attr1: 'value1'},
+				{path: `${__dirname}/data/scripts.html`, attr2: 'value2'},
+				{path: `${__dirname}/data/scripts.html`, attr1: 'value1', attr2: 'value2'},
+			]);
+		});
+	});
+
 });

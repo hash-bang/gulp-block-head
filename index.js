@@ -174,9 +174,22 @@ var blockHeadImport = function(files, options) {
 	// }}}
 
 	// Glue VM structure into each block {{{
-	settings.blocks = _.map(settings.blocks, (v, k) => {
-		return _.isObject(v) ? v : {
-			id: _.isString(k) ? k : v, // Use either the key if we're given an object, the string expression or the string expression
+	debugger;
+	settings.blocks = _(settings.blocks) // Transform blocks into collection
+		.thru(v =>
+			_.isString(v) ? [{id: v}] // String? Map into minimal collection
+			: _.isArray(v) ? _.map(v, v => // Array? Unpack
+				_.isString(v) ? {id: v} // Array of strings
+				: _.set(v, 'id', k)
+			) // Array? Map into minimal collection
+			: _.isObject(v) ? _.map(v, (v, k) => // Transform object into array...
+				_.isString(v) // Given object <string>?
+					? {id: k} // Map into minimal object
+					: _.set(v, 'id', k) // Extend object <object>... Glue id into array
+			)
+			: v // ...No idea, just pass through
+		)
+		.map(v => _.defaults(v, {
 			name: path => path,
 			transform: (content, path, block) => {
 				try {
@@ -207,8 +220,8 @@ var blockHeadImport = function(files, options) {
 					throw e;
 				}
 			},
-		};
-	});
+		}))
+		.value();
 	// }}}
 
 	return new Promise((resolve, reject) => {
