@@ -174,7 +174,6 @@ var blockHeadImport = function(files, options) {
 	// }}}
 
 	// Glue VM structure into each block {{{
-	debugger;
 	settings.blocks = _(settings.blocks) // Transform blocks into collection
 		.thru(v =>
 			_.isString(v) ? [{id: v}] // String? Map into minimal collection
