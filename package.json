@@ -1,6 +1,6 @@
 {
   "name": "gulp-block-head",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Simple, fast tool to filter SFC style files into seperate components",
   "main": "index.js",
   "scripts": {
@@ -25,11 +25,11 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "debug": "^4.1.1",
-    "mocha": "^6.0.1"
+    "mocha": "^6.2.0"
   },
   "dependencies": {
     "gulp": "^3.9.1",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.15",
     "parse-attributes": "0.0.1",
     "test": "^0.6.0",
     "vinyl": "^2.2.0"
