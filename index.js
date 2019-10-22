@@ -10,7 +10,7 @@ var vm = require('vm');
 var blockHead = function(options) {
 	var settings = {
 		default: false,
-		backpressureWait: false, // Set to a timeout to retry automatically
+		backpressure: 'warn', // False = ignore, True = Error on backpressure, 'warn' - Warn but continue, Number - set to a timeout to retry automatically
 		blocks: {},
 		...options,
 	};
@@ -107,11 +107,19 @@ var blockHead = function(options) {
 							var tryPush = ()=> {
 								if (this.push(block.vinyl)) {
 									resolve();
-								} else if (!settings.backpressureWait) {
+								} else if (isFinite(settings.backpressure)) {
+									debug('Backpressure detected, try again in', settings.backpressure);
+									setTimeout(tryPush, settings.backpressure);
+								} else if (settings.backpressure === false) {
 									reject('Cannot continue buffering due to backpressure');
+								} else if (settings.backpressure === true) {
+									debug('Backpressure detected, ignoring');
+									resolve();
+								} else if (settings.backpressure === 'warn') {
+									console.warn(`Warning, backpressure encounted while processing block "${block.id}" in "${block.vinyl.path}" +${block.lineOffset+1}`);
+									resolve();
 								} else {
-									debug('Backpressure detected, try again in', settings.backpressureWait);
-									setTimeout(tryPush, settings.backpressureWait);
+									reject('Backpressure encounted but unsupported method specified to handle it');
 								}
 							};
 							tryPush();
