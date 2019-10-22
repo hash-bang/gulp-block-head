@@ -102,6 +102,7 @@ var blockHead = function(options) {
 					.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
 					.forEach(block => {
 						debug(`extracted file "${block.vinyl.path}" +${block.lineOffset+1} (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
+
 						this.push(block.vinyl);
 					})
 
@@ -132,10 +133,13 @@ var blockHead = function(options) {
 				done();
 			}
 		} else if (file.isNull()) {
+			debug('Handed null - ignoring');
 			done(null, file);
 		} else if (file.isStream()) {
+			debug('Handed stream - erroring');
 			done('Gulp-block-head - Streams are not yet supported');
 		} else {
+			debug('Handed unknown - erroring');
 			done('Unknown format');
 		}
 	});
