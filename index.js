@@ -106,7 +106,6 @@ var blockHead = function(options) {
 							debug(`extracted file "${block.vinyl.path}" +${block.lineOffset+1} (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
 							var tryPush = ()=> {
 								if (this.push(block.vinyl)) {
-									debug('No pressure');
 									resolve();
 								} else if (!settings.backpressureWait) {
 									reject('Cannot continue buffering due to backpressure');
