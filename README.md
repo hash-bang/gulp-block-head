@@ -154,6 +154,7 @@ Each block definition accepts the following properties:
 | `default.name`         | `Function`              |                                                    | Optional renamer for default resources           |
 | `default.transform`    | `Function`              |                                                    | Optional transformer for default resources       |
 | `default.include`      | `Function`              | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
+| `backpressureWait`     | `Boolean` or `Number`   | `false`                                            | If falsy attempting to buffer past the Highwater mark will error out, if a number buffering will be attempted again in a number of milliseconds |
 
 
 **Notes:**

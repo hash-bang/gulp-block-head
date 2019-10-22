@@ -10,6 +10,7 @@ var vm = require('vm');
 var blockHead = function(options) {
 	var settings = {
 		default: false,
+		backpressureWait: false, // Set to a timeout to retry automatically
 		blocks: {},
 		...options,
 	};
@@ -98,15 +99,25 @@ var blockHead = function(options) {
 			if (block) { // Still in a block even though we exited? Missing closing block syntax
 				done(`Missing closing block syntax in ${file.path} - block "${block.id}" not closed with ${block.matchEnd}`);
 			} else if (foundBlocks.length) { // Found some blocks
-				foundBlocks
-					.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
-					.forEach(block => {
-						debug(`extracted file "${block.vinyl.path}" +${block.lineOffset+1} (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
-
-						this.push(block.vinyl);
-					})
-
-				done(); // Remove input content
+				Promise.all(
+					foundBlocks
+						.sort((a, b) => a.sort == b.sort ? 0 : a.sort > b.sort ? 1 : -1)
+						.map(block => new Promise((resolve, reject) => {
+							debug(`extracted file "${block.vinyl.path}" +${block.lineOffset+1} (${Math.ceil(block.vinyl.contents.length / 1024)}kb)`);
+							var tryPush = ()=> {
+								if (this.push(block.vinyl)) {
+									debug('No pressure');
+									resolve();
+								} else if (!settings.backpressureWait) {
+									reject('Cannot continue buffering due to backpressure');
+								} else {
+									debug('Backpressure detected, try again in', settings.backpressureWait);
+									setTimeout(tryPush, settings.backpressureWait);
+								}
+							};
+							tryPush();
+						}))
+				).then(()=> done()).catch(done) // Remove input content
 			} else if (!foundBlocks.length && !ignoreCount && typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
 				if (settings.default.include) { // Check if we should include this at all
 					if (!settings.default.include(file.path)) return done();
