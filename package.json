@@ -1,6 +1,6 @@
 {
   "name": "gulp-block-head",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Simple, fast tool to filter SFC style files into seperate components",
   "main": "index.js",
   "scripts": {
