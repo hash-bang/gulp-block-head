@@ -75,7 +75,7 @@ describe('node execution', ()=> {
 
 				expect(err).to.be.an('error');
 				expect(err.message).to.match(/This is a silly error/);
-				expect(err.stack).to.match(/\s*at .*?\/scripts-error.html:6:7\n/);
+				expect(err.stack).to.match(/\s*at .*?\/scripts-error.html:6:7/);
 				done();
 			})
 	});

@@ -2,6 +2,7 @@ var blockHead = require('..');
 var expect = require('chai').expect;
 var fspath = require('path');
 var gulp = require('gulp');
+var os = require('os');
 
 describe('simple replacements', ()=> {
 
@@ -34,8 +35,8 @@ describe('simple replacements', ()=> {
 			.on('end', ()=> {
 				expect(output).to.deep.equal({
 					'simple.html#foo': 'foo>\tFoo contents!<foo',
-					'simple.html#bar': 'bar>>\tBar contents!\n\tBar contents 2!<<bar',
-					'baz.txt': 'baz>>>\tBaz contents!\n\tBaz contents 2!\n\tBaz contents 3!<<<baz',
+					'simple.html#bar': `bar>>\tBar contents!${os.EOL}\tBar contents 2!<<bar`,
+					'baz.txt': `baz>>>\tBaz contents!${os.EOL}\tBaz contents 2!${os.EOL}\tBaz contents 3!<<<baz`,
 				});
 				expect(hitBlocks).to.deep.equal({
 					bar: {attrib1: true, attrib2: true},
@@ -64,7 +65,7 @@ describe('default rules', ()=> {
 			})
 			.on('end', ()=> {
 				expect(output).to.deep.equal({
-					'default.js': 'alert(\'Hello World\');\n',
+					'default.js': `alert(\'Hello World\');${os.EOL}`,
 				});
 				done();
 			})
