@@ -155,6 +155,7 @@ Each block definition accepts the following properties:
 | `default.transform`    | `Function`              |                                                    | Optional transformer for default resources       |
 | `default.include`      | `Function`              | <code>(path) => true</code>                        | Determine whether to use the file in the output. If false no more processing is done. Applies only to the `default` block |
 | `backpressure`         | `Boolean`, `Number` or `"warn"` | `"warn"`                                   | How to handle backpressure when buffering into a Vinyl stream. `false` = Ignore and continue silently, `true` - raise an error and exit, `Number` - wait this number of milliseconds and try again, `"warn"` - Print a warning but continue |
+| `lineFeed`             | `String`                | `os.EOL`                                           | Line feed character for this OS                  |
 
 
 **Notes:**

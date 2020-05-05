@@ -2,6 +2,7 @@ var _ = require('lodash');
 var debug = require('debug')('block-head');
 var fspath = require('path');
 var gulp = require('gulp');
+var os = require('os');
 var parseAttributes = require('parse-attributes');
 var through = require('through2');
 var Vinyl = require('vinyl');
@@ -12,6 +13,7 @@ var blockHead = function(options) {
 		default: false,
 		backpressure: 'warn', // False = ignore, True = Error on backpressure, 'warn' - Warn but continue, Number - set to a timeout to retry automatically
 		blocks: {},
+		lineFeed: os.EOL,
 		...options,
 	};
 
@@ -41,7 +43,7 @@ var blockHead = function(options) {
 		var stream = this;
 
 		if (file.isBuffer()) {
-			var lines = file.contents.toString().split('\n');
+			var lines = file.contents.toString().split(settings.lineFeed);
 			var block = false; // Either boolean false or the block reference we are in
 			var foundBlocks = [];
 			var ignoreCount = 0;
@@ -74,7 +76,7 @@ var blockHead = function(options) {
 							path: block.name(file.path, block),
 							contents: new Buffer.from(
 								block.transform(
-									lines.slice(block.lineOffset, lineNumber).join('\n'),
+									lines.slice(block.lineOffset, lineNumber).join(settings.lineFeed),
 									file.path,
 									block
 								) || ''
