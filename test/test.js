@@ -46,6 +46,24 @@ describe('simple replacements', ()=> {
 			})
 	});
 
+	it('should support attribute rules', done => {
+		var output = '';
+		gulp.src(`${__dirname}/data/scripts.html`)
+			.pipe(blockHead({
+				blocks: {
+					'script#attr1': x => 'attr1',
+					'script#attr2': x => 'attr2',
+				},
+			}))
+			.on('data', d => {
+				output += d.contents.toString();
+			})
+			.on('end', ()=> {
+				expect(output).to.equal('attr1attr2attr1');
+				done();
+			})
+	});
+
 });
 
 describe('default rules', ()=> {

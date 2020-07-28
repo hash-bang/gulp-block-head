@@ -11,8 +11,11 @@ var gulp = require('gulp');
 
 gulp('./**/*.vue')
 	.pipe(blockHead({
-		// Wrap JS contents in Vue.component
-		js: contents => `Vue.component(${contents});`, 
+		// Wrap `<script component>` in Vue.component
+		'script#component': contents => `Vue.component(${contents});`,
+
+		// Accept regular script content with no attributes
+		script: contents => contents,
 
 		// Split CSS into its own file with a header
 		css: {
@@ -144,7 +147,7 @@ Each block definition accepts the following properties:
 |------------------------|-------------------------|----------------------------------------------------|--------------------------------------------------|
 | `blocks`               | `Array` or `Object`     | `{}`                                               | Definition of the blocks                         |
 | `blocks.[].id`         | `String`                | (derived from object key)                          | The ID of the block                              |
-| `blocks.[].ignore`     | `function` or `boolean` | `false`                                            | Whether to ignore the block entirely, if this is a function its called as `(path, block)` |
+| `blocks.[].filter`     | `function` or `boolean` | `false`                                            | Whether to accept the block, if this is a function its called as `(path, block)` |
 | `blocks.[].name`       | `Function`              | <code>(path, block) => `${path}#${block.id}</code> | How to name the output file                      |
 | `blocks.[].transform`  | `Function`              | <code>(contents, path, block) => contents</code>   | How to transform the contents of the output file |
 | `blocks.[].matchStart` | `RegExp`                | ``^<${block.id}(\s*.+?\s*)?>$``                    | The matching start of the block                  |

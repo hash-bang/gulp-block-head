@@ -29,15 +29,24 @@ var blockHead = function(options) {
 	}
 
 	// Error check the blocks
-	settings.blocks = settings.blocks.map(block => ({
-		matchStart: new RegExp(`^<${block.id}(\s*.+?\s*)?>$`),
-		matchEnd: new RegExp(`^</${block.id}>$`),
-		transform: contents => contents,
-		name: (path, block) => `${path}#${block.id}`,
-		sort: 0,
-		ignore: false,
-		...block,
-	}))
+	settings.blocks = settings.blocks.map(block => {
+		if (/#/.test(block.id)) { // Handle IDs in the form `tag#attr`
+			var attrFilter = block.id.split('#', 2)[1];
+			block.id = block.id.split('#', 2)[0];
+			if (_.isFunction(block.filter)) throw new Error('Cannot combine tag#attr filters with a filter function, choose one or the other');
+			block.filter = (path, block) => block.attr[attrFilter] !== undefined;
+		}
+
+		return {
+			matchStart: new RegExp(`^<${block.id}(\s*.+?\s*)?>$`),
+			matchEnd: new RegExp(`^</${block.id}>$`),
+			transform: contents => contents,
+			name: (path, block) => `${path}#${block.id}`,
+			sort: 0,
+			filter: true,
+			...block,
+		};
+	});
 
 	return through.obj(function(file, enc, done) {
 		var stream = this;
@@ -46,55 +55,47 @@ var blockHead = function(options) {
 			var lines = file.contents.toString().split(settings.lineFeed);
 			var block = false; // Either boolean false or the block reference we are in
 			var foundBlocks = [];
-			var ignoreCount = 0;
 
 			lines.forEach((line, lineNumber) => {
 				if (!block) { // Not yet in a block
-					block = settings.blocks.find(b => {
+					block = settings.blocks.find(b => { // Find first block with matches start expression + passes filter test
 						var match = b.matchStart.exec(line);
-						if (match) {
-							block = b;
-							block.attr = parseAttributes(match[1]);
-							return true;
-						} else {
-							return false;
-						}
+						if (!match) return false; // Doesn't match block expression
+
+						block = b;
+						block.attr = parseAttributes(match[1]); // Glue attributes onto block
+
+						return ( // Apply filtering logic
+							_.isBoolean(block.filter) ? block.filter // If its a boolean use that value
+							: _.isFunction(block.filter) ? block.filter(file.path, block) // If its a func, call it first
+							: true // Default to true
+						);
 					});
-					if (block) { // Start of a new block
-						block.lineOffset = lineNumber + 1;
-					}
+
+					if (block) block.lineOffset = lineNumber + 1; // Start of a new block
 				} else if (block.matchEnd.test(line)) { // End of a block
-					if (
-						block.ignore === true
-						|| (typeof block.ignore == 'function' && block.ignore(file.path, block))
-					) { // Ignore block
-						debug(`Ignore block "${block.id}"`, file.path, `due to ignore result`);
-						ignoreCount++;
-						// Do nothing
-					} else { // Include block
-						var vObject = new Vinyl({
-							path: block.name(file.path, block),
-							contents: new Buffer.from(
-								block.transform(
-									lines.slice(block.lineOffset, lineNumber).join(settings.lineFeed),
-									file.path,
-									block
-								) || ''
-							),
-							stat: file.stat,
-						});
+					var vObject = new Vinyl({
+						path: block.name(file.path, block),
+						contents: new Buffer.from(
+							block.transform(
+								lines.slice(block.lineOffset, lineNumber).join(settings.lineFeed),
+								file.path,
+								block
+							) || ''
+						),
+						stat: file.stat,
+					});
 
-						foundBlocks.push({
-							lineOffset: block.lineOffset,
-							sort:
-								! block.sort ? 0
-								: typeof block.sort == 'function' ? block.sort(file.path, block)
-								: block.sort,
-							vinyl: vObject,
-						});
-					}
+					foundBlocks.push({
+						lineOffset: block.lineOffset,
+						sort:
+							! block.sort ? 0
+							: typeof block.sort == 'function' ? block.sort(file.path, block)
+							: block.sort,
+						vinyl: vObject,
+					});
 
-					block = false;
+					block = null;
 				}
 			});
 
@@ -127,7 +128,7 @@ var blockHead = function(options) {
 							tryPush();
 						}))
 				).then(()=> done()).catch(done) // Remove input content
-			} else if (!foundBlocks.length && !ignoreCount && typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
+			} else if (!foundBlocks.length && typeof settings.default == 'object') { // No blocks extracted and we have a definition for a default
 				if (settings.default.include) { // Check if we should include this at all
 					if (!settings.default.include(file.path)) return done();
 				}
