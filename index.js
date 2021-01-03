@@ -38,7 +38,7 @@ var blockHead = function(options) {
 		}
 
 		return {
-			matchStart: new RegExp(`^<(?<tag>${block.id})(\s*.+?\s*)?>$`),
+			matchStart: new RegExp(`^<(?<tag>${block.id})(?<attrs>\s*.+?\s*)?>$`),
 			matchEnd: new RegExp(`^</${block.id}>$`),
 			transform: contents => contents,
 			name: (path, block) => `${path}#${block.id}`,
@@ -64,7 +64,7 @@ var blockHead = function(options) {
 						if (!match) return false; // Doesn't match block expression
 
 						block = b;
-						block.attr = parseAttributes(match[1]); // Glue attributes onto block
+						block.attr = parseAttributes(match.groups.attrs); // Glue attributes onto block
 						block.tag = match.groups.tag;
 
 						return ( // Apply filtering logic
