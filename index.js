@@ -38,12 +38,13 @@ var blockHead = function(options) {
 		}
 
 		return {
-			matchStart: new RegExp(`^<${block.id}(\s*.+?\s*)?>$`),
+			matchStart: new RegExp(`^<(?<tag>${block.id})(\s*.+?\s*)?>$`),
 			matchEnd: new RegExp(`^</${block.id}>$`),
 			transform: contents => contents,
 			name: (path, block) => `${path}#${block.id}`,
 			sort: 0,
 			filter: true,
+			// tag: String, // Populated on each call to transform with the result of matchStart.exec(contents).groups.tag
 			...block,
 		};
 	});
@@ -64,6 +65,7 @@ var blockHead = function(options) {
 
 						block = b;
 						block.attr = parseAttributes(match[1]); // Glue attributes onto block
+						block.tag = match.groups.tag;
 
 						return ( // Apply filtering logic
 							_.isBoolean(block.filter) ? block.filter // If its a boolean use that value
